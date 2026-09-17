@@ -368,17 +368,25 @@
 
 <header>
   <h1>🔍 Faktenchecker</h1>
-  <p>Gib einen Text ein. Die App zerlegt ihn in einzelne Behauptungen und führt dich
-     bei jeder durch einen Recherche-Leitfaden, der sich an journalistischen
-     Standards orientiert – mit direkten Links zu Quellen. Die Bewertung
-     triffst du selbst; hier findet keine automatische KI-Einschätzung statt.</p>
+  <p>Gib einen Text ein. Die App zerlegt ihn in einzelne Behauptungen. Mit einem
+     eigenen, kostenlosen KI-Key (siehe unten) bewertet sie jede Behauptung automatisch
+     und zeigt dir passende Quellen. Ohne Key hilft sie dir mit einem Recherche-Leitfaden
+     und fertigen Links, selbst zu prüfen – die Einordnung triffst du dann von Hand.</p>
 </header>
 
 <main>
-  <div class="disclaimer">
-    Diese App recherchiert nicht selbst und bewertet nichts automatisch.
-    Sie strukturiert deine eigene Recherche nach anerkannten Prinzipien und
-    verlinkt passende Quellen – die inhaltliche Prüfung machst du.
+  <div class="disclaimer" id="aiCta">
+    <strong>Automatische Bewertung einschalten:</strong> Trag unten einen kostenlosen
+    Google-Gemini-Key ein (ohne Kreditkarte, siehe „KI-Einschätzung einrichten"), dann
+    bewertet die App jede Behauptung automatisch inklusive Quellen. Ohne Key hilft sie
+    dir mit einem Recherche-Leitfaden und fertigen Links, selbst zu prüfen.
+    <div class="row" style="margin-top:0.6rem;">
+      <button class="small" onclick="openAiSettings()">Kostenlosen Key jetzt einrichten</button>
+    </div>
+  </div>
+  <div class="disclaimer" id="manualHint" style="display:none;">
+    Automatische Bewertung ist aktiv (Anbieter: <span id="manualHintProvider"></span>).
+    Jede neue Behauptung wird direkt eingeschätzt – die Vorschläge bleiben unten editierbar.
   </div>
 
   <details class="card" id="settingsCard">
@@ -604,6 +612,9 @@ ohne zusätzlichen Text davor oder danach:
     const fb = document.getElementById("settingsFeedback");
     fb.textContent = "Gespeichert.";
     setTimeout(() => { fb.textContent = ""; }, 2000);
+
+    updateAiCta();
+    if (apiKey) autoCheckAllClaims();
   }
 
   function getActiveSettings() {
@@ -614,8 +625,32 @@ ohne zusätzlichen Text davor oder danach:
     return { provider, model, apiKey, webSearch };
   }
 
+  function hasApiKey() {
+    return !!getActiveSettings().apiKey;
+  }
+
+  function updateAiCta() {
+    const active = hasApiKey();
+    document.getElementById("aiCta").style.display = active ? "none" : "block";
+    const hint = document.getElementById("manualHint");
+    hint.style.display = active ? "block" : "none";
+    if (active) {
+      const provider = getActiveSettings().provider;
+      const label = { google: "Google Gemini", anthropic: "Anthropic Claude", openai: "OpenAI" }[provider] || provider;
+      document.getElementById("manualHintProvider").textContent = label;
+    }
+  }
+
+  function openAiSettings() {
+    const card = document.getElementById("settingsCard");
+    card.open = true;
+    card.scrollIntoView({ behavior: "smooth", block: "start" });
+    document.getElementById("apiKeyInput").focus();
+  }
+
   document.addEventListener("DOMContentLoaded", () => {
     loadSettings();
+    updateAiCta();
     document.getElementById("providerSelect").addEventListener("change", () => {
       const provider = document.getElementById("providerSelect").value;
       document.getElementById("modelInput").value = DEFAULT_MODELS[provider];
@@ -624,9 +659,10 @@ ohne zusätzlichen Text davor oder danach:
   });
 
   // ---------- KI-Anfrage pro Behauptung ----------
+  // `btn` ist optional: bei der automatischen Bewertung nach dem Aufteilen der
+  // Behauptungen gibt es (noch) keinen Klick, sondern nur das Behauptungs-Element.
 
-  async function runAiCheck(btn) {
-    const claimEl = btn.closest(".claim");
+  async function runAiCheck(claimEl, btn) {
     const claimText = claimEl.dataset.claimText;
     const resultBox = claimEl.querySelector(".ai-result");
     const { provider, model, apiKey, webSearch } = getActiveSettings();
@@ -640,7 +676,7 @@ ohne zusätzlichen Text davor oder danach:
     const providerLabel = { google: "Gemini", anthropic: "Claude", openai: "OpenAI" }[provider] || provider;
     resultBox.style.display = "block";
     resultBox.innerHTML = `<p class="ai-loading">Fragt ${providerLabel} an …</p>`;
-    btn.disabled = true;
+    if (btn) btn.disabled = true;
 
     try {
       let parsed;
@@ -652,10 +688,24 @@ ohne zusätzlichen Text davor oder danach:
         parsed = await callOpenAI(claimText, model, apiKey);
       }
       renderAiResult(claimEl, resultBox, parsed);
+      claimEl.dataset.aiChecked = "1";
     } catch (err) {
       resultBox.innerHTML = `<p class="ai-error">Fehler bei der Anfrage:\n${escapeHtml((err && err.message) || err)}</p>`;
     } finally {
-      btn.disabled = false;
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  const AI_AUTO_DELAY_MS = 900; // kleine Pause zwischen automatischen Anfragen (schont kostenlose Rate-Limits)
+
+  /** Fragt für jede noch nicht bewertete Behauptung automatisch eine KI-Einschätzung an – nacheinander, nicht parallel. */
+  async function autoCheckAllClaims() {
+    if (!hasApiKey()) return;
+    const claimEls = [...document.querySelectorAll("#results .claim")].filter(el => el.dataset.aiChecked !== "1");
+    for (const claimEl of claimEls) {
+      if (!hasApiKey()) break; // Key könnte zwischenzeitlich entfernt worden sein
+      await runAiCheck(claimEl);
+      await new Promise(r => setTimeout(r, AI_AUTO_DELAY_MS));
     }
   }
 
@@ -931,7 +981,7 @@ ohne zusätzlichen Text davor oder danach:
         ${renderLinkGroup("Wissenschaftliche Quellen", scholarly)}
 
         <div class="ai-row" style="margin-top:1rem;">
-          <button class="ai-btn" onclick="runAiCheck(this)">🤖 KI-Einschätzung anfragen</button>
+          <button class="ai-btn" onclick="runAiCheck(this.closest('.claim'), this)">🤖 KI-Einschätzung (erneut) anfragen</button>
           <div class="ai-result" style="display:none;"></div>
         </div>
 
@@ -946,6 +996,10 @@ ohne zusätzlichen Text davor oder danach:
 
     document.getElementById("summaryActions").style.display = "flex";
     document.getElementById("summary").innerHTML = "";
+
+    // Ist ein KI-Key hinterlegt, direkt jede Behauptung automatisch einschätzen
+    // (kein Klick pro Behauptung nötig) - läuft nacheinander im Hintergrund weiter.
+    autoCheckAllClaims();
   }
 
   function verdictLabel(value) {
