@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Faktenchecker – journalistischer Leitfaden</title>
+<meta name="description" content="Zerlegt einen Text in einzelne Behauptungen und führt dich anhand journalistischer Standards (angelehnt an IFCN-Prinzipien) durch die eigene Recherche – mit direkten Links zu Quellen, ganz ohne automatische KI-Bewertung.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔍</text></svg>">
+<style>
+  :root {
+    --bg: #f7f5f2;
+    --card: #ffffff;
+    --ink: #1c1c1c;
+    --muted: #6b6b6b;
+    --accent: #1a5f4a;
+    --accent-light: #e5f2ee;
+    --border: #e2ddd6;
+    --warn-bg: #fdf7ec;
+    --warn-border: #f0e2c0;
+    --warn-ink: #7a5a12;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #15181a;
+      --card: #1f2326;
+      --ink: #eceae6;
+      --muted: #9a9a9a;
+      --accent: #4fbf9a;
+      --accent-light: #1c3229;
+      --border: #33383c;
+      --warn-bg: #332a17;
+      --warn-border: #4a3c1f;
+      --warn-ink: #e0b866;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #15181a;
+    --card: #1f2326;
+    --ink: #eceae6;
+    --muted: #9a9a9a;
+    --accent: #4fbf9a;
+    --accent-light: #1c3229;
+    --border: #33383c;
+    --warn-bg: #332a17;
+    --warn-border: #4a3c1f;
+    --warn-ink: #e0b866;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.5;
+  }
+  header {
+    padding: 2.5rem 1.25rem 1.5rem;
+    text-align: center;
+  }
+  header h1 {
+    margin: 0 0 0.4rem;
+    font-size: 1.8rem;
+    letter-spacing: -0.02em;
+  }
+  header p {
+    margin: 0 auto;
+    color: var(--muted);
+    max-width: 600px;
+    font-size: 0.95rem;
+  }
+  main {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 0 1rem 3rem;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  textarea {
+    width: 100%;
+    min-height: 110px;
+    padding: 0.9rem;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    font-size: 1rem;
+    font-family: inherit;
+    resize: vertical;
+    background: var(--bg);
+    color: var(--ink);
+  }
+  textarea:focus { outline: 2px solid var(--accent); border-color: transparent; }
+  .row { display: flex; gap: 0.6rem; margin-top: 0.9rem; flex-wrap: wrap; }
+  button {
+    font-family: inherit;
+    font-size: 0.92rem;
+    padding: 0.6rem 1.1rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--ink);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  button.primary {
+    background: var(--accent);
+    color: #06251c;
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+  button.primary:hover { filter: brightness(1.08); }
+  button:hover { background: var(--accent-light); }
+  button.small {
+    font-size: 0.78rem;
+    padding: 0.35rem 0.7rem;
+  }
+  .disclaimer {
+    font-size: 0.82rem;
+    color: var(--warn-ink);
+    background: var(--warn-bg);
+    border: 1px solid var(--warn-border);
+    padding: 0.8rem 1rem;
+    border-radius: 10px;
+    margin-bottom: 1.5rem;
+  }
+  .principles {
+    font-size: 0.82rem;
+    color: var(--muted);
+  }
+  .principles summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 0.4rem;
+  }
+  .principles ul { margin: 0.5rem 0 0; padding-left: 1.2rem; }
+  .principles li { margin-bottom: 0.3rem; }
+
+  .claim {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.25rem 1.25rem 1.4rem;
+    margin-bottom: 1.25rem;
+  }
+  .claim-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-bottom: 0.9rem;
+  }
+  .claim-header p {
+    font-weight: 600;
+    margin: 0;
+    flex: 1;
+  }
+  .progress-badge {
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    background: var(--accent-light);
+    color: var(--accent);
+    white-space: nowrap;
+  }
+
+  .checklist {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    margin-bottom: 1rem;
+  }
+  .checklist label {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+    font-size: 0.88rem;
+    cursor: pointer;
+  }
+  .checklist input[type="checkbox"] {
+    margin-top: 0.2rem;
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent);
+    flex-shrink: 0;
+  }
+  .checklist .step-title { font-weight: 600; }
+  .checklist .step-desc { color: var(--muted); display: block; font-size: 0.82rem; }
+
+  .group-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin: 0.9rem 0 0.35rem;
+    display: block;
+  }
+  .links { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .links a {
+    display: inline-block;
+    font-size: 0.85rem;
+    padding: 0.4rem 0.75rem;
+    border-radius: 999px;
+    background: var(--accent-light);
+    color: var(--accent);
+    text-decoration: none;
+    border: 1px solid transparent;
+  }
+  .links a:hover { border-color: var(--accent); }
+  .links a.factcheck { background: #fdf0e6; color: #8a4a12; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .links a.factcheck { background: #3a2a17; color: #e0a86b; }
+  }
+  :root[data-theme="dark"] .links a.factcheck { background: #3a2a17; color: #e0a86b; }
+
+  .verdict-row { margin-top: 1.1rem; }
+  .verdict-row label {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 0.4rem;
+  }
+  select {
+    width: 100%;
+    padding: 0.6rem 0.7rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 0.9rem;
+  }
+  textarea.notes {
+    width: 100%;
+    min-height: 60px;
+    margin-top: 0.6rem;
+    padding: 0.6rem 0.7rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 0.85rem;
+    resize: vertical;
+  }
+
+  .empty {
+    color: var(--muted);
+    font-size: 0.9rem;
+    text-align: center;
+    padding: 1rem 0;
+  }
+
+  .summary-actions {
+    display: flex;
+    justify-content: center;
+    margin: 0.5rem 0 1.5rem;
+  }
+  #summary h2 {
+    font-size: 1.05rem;
+    margin: 0 0 1rem;
+  }
+  .summary-item {
+    border-top: 1px solid var(--border);
+    padding-top: 0.9rem;
+    margin-top: 0.9rem;
+  }
+  .summary-item:first-of-type { border-top: none; margin-top: 0; padding-top: 0; }
+  .summary-item .s-claim { font-weight: 600; margin: 0 0 0.35rem; }
+  .summary-item .s-verdict {
+    display: inline-block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    background: var(--accent-light);
+    color: var(--accent);
+    margin-bottom: 0.4rem;
+  }
+  .summary-item .s-verdict.unset {
+    background: var(--warn-bg);
+    color: var(--warn-ink);
+  }
+  .summary-item .s-notes {
+    font-size: 0.85rem;
+    color: var(--muted);
+    white-space: pre-wrap;
+    margin: 0.2rem 0 0;
+  }
+  .summary-item .s-progress {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin: 0.2rem 0 0;
+  }
+  .copy-feedback {
+    font-size: 0.8rem;
+    color: var(--accent);
+    margin-left: 0.6rem;
+    align-self: center;
+  }
+
+  .ai-btn {
+    font-size: 0.85rem;
+    background: var(--accent-light);
+    border-color: var(--accent);
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .ai-result {
+    margin-top: 0.8rem;
+    padding: 0.9rem 1rem;
+    border-radius: 10px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    font-size: 0.88rem;
+  }
+  .ai-result .ai-verdict {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    background: var(--accent);
+    color: #06251c;
+    margin-bottom: 0.5rem;
+  }
+  .ai-result .ai-reasoning {
+    margin: 0 0 0.6rem;
+  }
+  .ai-result .ai-sources {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .ai-result .ai-sources a {
+    font-size: 0.8rem;
+    color: var(--accent);
+  }
+  .ai-result .ai-sources .ai-source-invalid {
+    font-size: 0.8rem;
+    color: var(--muted);
+    text-decoration: line-through;
+  }
+  .ai-result .ai-error {
+    color: #b3261e;
+    white-space: pre-wrap;
+  }
+  .ai-loading {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.8rem;
+    padding-bottom: 2rem;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🔍 Faktenchecker</h1>
+  <p>Gib einen Text ein. Die App zerlegt ihn in einzelne Behauptungen und führt dich
+     bei jeder durch einen Recherche-Leitfaden, der sich an journalistischen
+     Standards orientiert – mit direkten Links zu Quellen. Die Bewertung
+     triffst du selbst; hier findet keine automatische KI-Einschätzung statt.</p>
+</header>
+
+<main>
+  <div class="disclaimer">
+    Diese App recherchiert nicht selbst und bewertet nichts automatisch.
+    Sie strukturiert deine eigene Recherche nach anerkannten Prinzipien und
+    verlinkt passende Quellen – die inhaltliche Prüfung machst du.
+  </div>
+
+  <details class="card" id="settingsCard">
+    <summary style="cursor:pointer; font-weight:600;">🤖 KI-Einschätzung einrichten (optional)</summary>
+    <p class="principles" style="margin-top:0.8rem;">
+      Ohne Key funktioniert die App weiter rein manuell (Checkliste + Links).
+      Trägst du hier deinen eigenen API-Key ein, kannst du bei jeder Behauptung
+      zusätzlich eine automatische KI-Einschätzung anfragen. Der Key wird
+      ausschließlich in deinem Browser verwendet und geht nirgendwo sonst hin
+      als direkt an den gewählten Anbieter.
+    </p>
+    <p class="principles" style="margin-top:0.5rem;">
+      <strong>Kostenlose Option:</strong> Google Gemini bietet einen Free-Tier-API-Key
+      ohne Kreditkarte über
+      <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a>
+      an (Rate-Limits gelten). Damit lässt sich diese App komplett kostenlos betreiben,
+      inklusive optionaler Google-Websuche zur Recherche.
+    </p>
+    <div class="row" style="margin-top:0.6rem;">
+      <div style="flex:1; min-width:160px;">
+        <label style="font-size:0.78rem; color:var(--muted); display:block; margin-bottom:0.3rem;">Anbieter</label>
+        <select id="providerSelect" style="width:100%;">
+          <option value="google">Google Gemini (kostenlos, empfohlen)</option>
+          <option value="anthropic">Anthropic (Claude)</option>
+          <option value="openai">OpenAI</option>
+        </select>
+      </div>
+      <div style="flex:1; min-width:160px;">
+        <label style="font-size:0.78rem; color:var(--muted); display:block; margin-bottom:0.3rem;">Modell</label>
+        <input type="text" id="modelInput" style="width:100%; padding:0.6rem 0.7rem; border-radius:8px; border:1px solid var(--border); background:var(--bg); color:var(--ink); font-family:inherit; font-size:0.9rem;">
+      </div>
+    </div>
+    <div class="row" style="margin-top:0.6rem;">
+      <div style="flex:1; min-width:220px;">
+        <label style="font-size:0.78rem; color:var(--muted); display:block; margin-bottom:0.3rem;">API-Key</label>
+        <input type="password" id="apiKeyInput" placeholder="AIza... (Google) / sk-ant-... / sk-..." style="width:100%; padding:0.6rem 0.7rem; border-radius:8px; border:1px solid var(--border); background:var(--bg); color:var(--ink); font-family:inherit; font-size:0.9rem;">
+      </div>
+    </div>
+    <div class="row" style="margin-top:0.6rem; align-items:center;">
+      <label style="display:flex; align-items:center; gap:0.4rem; font-size:0.85rem;">
+        <input type="checkbox" id="rememberKey" style="accent-color: var(--accent);"> Key in diesem Browser merken
+      </label>
+      <label id="webSearchLabel" style="display:flex; align-items:center; gap:0.4rem; font-size:0.85rem;">
+        <input type="checkbox" id="webSearchToggle" checked style="accent-color: var(--accent);"> Web-Suche aktivieren
+      </label>
+    </div>
+    <div class="row" style="margin-top:0.8rem;">
+      <button onclick="saveSettings()">Einstellungen speichern</button>
+      <span class="copy-feedback" id="settingsFeedback"></span>
+    </div>
+    <p class="principles" style="margin-top:0.8rem;">
+      Hinweis: Auch mit KI-Unterstützung kann die Einschätzung falsch oder
+      unvollständig sein – prüfe die angegebenen Quellen selbst, besonders bei
+      medizinischen oder politisch kontroversen Themen.
+    </p>
+  </details>
+
+  <details class="principles card">
+    <summary>Woran orientiert sich der Leitfaden?</summary>
+    <ul>
+      <li><strong>Primärquelle zuerst</strong> – die ursprüngliche Aussage, Studie oder
+        Institution suchen, nicht nur Berichte darüber.</li>
+      <li><strong>Mindestens zwei unabhängige Quellen</strong> – idealerweise ohne
+        gemeinsame Ausgangsquelle oder gegenseitiges Abschreiben.</li>
+      <li><strong>Interessenkonflikte prüfen</strong> – wer sagt das, und hat
+        diese Person/Institution ein finanzielles oder politisches Interesse
+        an der Aussage?</li>
+      <li><strong>Aktualität & Kontext</strong> – stammt die Quelle aus dem
+        relevanten Zeitraum, und wird sie im Originalkontext wiedergegeben?</li>
+      <li><strong>Bestehende Faktenchecks einbeziehen</strong> – wurde die
+        Behauptung schon von einer unabhängigen Fact-Checking-Organisation
+        geprüft (z. B. IFCN-zertifiziert)?</li>
+      <li><strong>Unsicherheit transparent machen</strong> – wenn die Beleglage
+        unklar oder umstritten ist, das auch so benennen, statt es zu glätten.</li>
+      <li><strong>Trennung von Fakt und Meinung</strong> – Werturteile, Prognosen
+        und Spekulationen sind keine Tatsachenbehauptungen und werden als
+        solche gekennzeichnet, nicht als „wahr" oder „falsch" bewertet.</li>
+    </ul>
+  </details>
+
+  <div class="card">
+    <textarea id="input" placeholder="Text oder Behauptung hier einfügen, z. B.: Wir haben durch Corona erhöhte Spike-Werte im Blut."></textarea>
+    <div class="row">
+      <button class="primary" onclick="checkClaims()">Behauptungen prüfen</button>
+      <button onclick="clearAll()">Zurücksetzen</button>
+    </div>
+  </div>
+
+  <div id="results"></div>
+
+  <div class="summary-actions" id="summaryActions" style="display:none;">
+    <button class="primary" onclick="buildSummary()">Zusammenfassung anzeigen</button>
+  </div>
+
+  <div id="summary"></div>
+</main>
+
+<footer>
+  Recherche-Leitfaden ohne KI-Bewertung. Ersetzt keine journalistische Redaktion.
+</footer>
+
+<script>
+  // ---------- Sicherheit: nie unbehandelten Text/URLs in innerHTML einsetzen ----------
+  function escapeHtml(str) {
+    return String(str ?? "").replace(/[&<>"']/g, c => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    }[c]));
+  }
+  // Nur http(s)-Links zulassen (kein javascript:/data: aus KI-Antworten oder Eingaben)
+  function safeUrl(url) {
+    try {
+      const u = new URL(String(url), location.href);
+      return (u.protocol === "http:" || u.protocol === "https:") ? u.href : null;
+    } catch { return null; }
+  }
+
+  const STEPS = [
+    {
+      title: "Primärquelle gefunden",
+      desc: "Original (Studie, Statement, Institution) statt nur Bericht darüber."
+    },
+    {
+      title: "Zweite unabhängige Quelle geprüft",
+      desc: "Bestätigt eine Quelle ohne gemeinsamen Ursprung die Aussage?"
+    },
+    {
+      title: "Interessenkonflikte geprüft",
+      desc: "Hat Quelle/Sprecher ein finanzielles oder politisches Interesse?"
+    },
+    {
+      title: "Aktualität & Kontext geprüft",
+      desc: "Stammt die Quelle aus dem passenden Zeitraum, richtiger Kontext?"
+    },
+    {
+      title: "Bestehende Faktenchecks gesucht",
+      desc: "Wurde die Aussage schon von einer Fact-Checking-Organisation geprüft?"
+    }
+  ];
+
+  const VERDICTS = [
+    { value: "", label: "– noch nicht bewertet –" },
+    { value: "korrekt", label: "Korrekt" },
+    { value: "groesstenteils-korrekt", label: "Größtenteils korrekt (mit Einschränkung)" },
+    { value: "irrefuehrend", label: "Irreführend (Kern stimmt, Kontext fehlt/übertrieben)" },
+    { value: "groesstenteils-falsch", label: "Größtenteils falsch" },
+    { value: "falsch", label: "Falsch" },
+    { value: "unklar", label: "Nicht belegbar / unklare Quellenlage" },
+    { value: "meinung", label: "Meinung / keine Tatsachenbehauptung" }
+  ];
+
+  // ---------- KI-Einstellungen ----------
+
+  const DEFAULT_MODELS = {
+    google: "gemini-3.6-flash",
+    anthropic: "claude-sonnet-5",
+    openai: "gpt-4o"
+  };
+
+  const JOURNALISTIC_SYSTEM_PROMPT = `Du bist ein Faktenchecker. Deine Aufgabe ist es, EINE einzelne Behauptung
+so genau, neutral und quellenbasiert wie möglich zu prüfen.
+
+VORGEHEN:
+1. Bewerte, ob es sich überhaupt um eine prüfbare Tatsachenbehauptung handelt
+   (nicht: reine Meinung, Wertung oder Spekulation).
+2. Prüfe die Behauptung anhand recherchierbarer, möglichst aktueller und
+   seriöser Quellen (wissenschaftliche Studien, offizielle Institutionen,
+   etablierte Medien, Primärquellen). Ziehe wenn möglich mehrere unabhängige
+   Quellen heran.
+3. Wenn du dir nicht sicher bist, sage das explizit - erfinde KEINE Quellen
+   oder Fakten. Erfinde niemals URLs; nenne nur Quellen, die du wirklich
+   kennst oder gefunden hast.
+4. Sei besonders vorsichtig bei medizinischen, gesundheitsbezogenen und
+   politisch kontroversen Themen. Gib keine Handlungsempfehlungen.
+5. Unterstelle niemandem Absicht, Lüge oder Täuschung - bewerte nur die
+   Faktenlage.
+6. Prüfe explizit auf Interessenkonflikte bei genannten Quellen/Sprechern,
+   ohne Motive zu unterstellen.
+
+Antworte AUSSCHLIESSLICH mit einem JSON-Objekt in exakt diesem Format,
+ohne zusätzlichen Text davor oder danach:
+{
+  "verdict": "korrekt" | "groesstenteils-korrekt" | "irrefuehrend" | "groesstenteils-falsch" | "falsch" | "unklar" | "meinung",
+  "reasoning": "2-5 Sätze Begründung auf Deutsch, sachlich",
+  "sources": [{"title": "Quellenname", "url": "https://..."}]
+}`;
+
+  function loadSettings() {
+    let stored = {};
+    try {
+      stored = JSON.parse(localStorage.getItem("faktenchecker_settings") || "{}");
+    } catch (e) { stored = {}; }
+
+    const provider = stored.provider || "google";
+    document.getElementById("providerSelect").value = provider;
+    document.getElementById("modelInput").value = stored.model || DEFAULT_MODELS[provider];
+    document.getElementById("apiKeyInput").value = stored.apiKey || "";
+    document.getElementById("rememberKey").checked = !!stored.apiKey;
+    document.getElementById("webSearchToggle").checked = stored.webSearch !== false;
+    toggleWebSearchVisibility();
+  }
+
+  function toggleWebSearchVisibility() {
+    const provider = document.getElementById("providerSelect").value;
+    document.getElementById("webSearchLabel").style.display = provider === "openai" ? "none" : "flex";
+  }
+
+  function saveSettings() {
+    const provider = document.getElementById("providerSelect").value;
+    const model = document.getElementById("modelInput").value.trim() || DEFAULT_MODELS[provider];
+    const apiKey = document.getElementById("apiKeyInput").value.trim();
+    const remember = document.getElementById("rememberKey").checked;
+    const webSearch = document.getElementById("webSearchToggle").checked;
+
+    const data = { provider, model, webSearch, apiKey: remember ? apiKey : "" };
+
+    try {
+      localStorage.setItem("faktenchecker_settings", JSON.stringify(data));
+    } catch (e) { /* Speicher nicht verfügbar, egal */ }
+
+    // Key für diese Sitzung immer im Speicher halten, unabhängig vom "merken"-Haken
+    window.__sessionApiKey = apiKey;
+
+    const fb = document.getElementById("settingsFeedback");
+    fb.textContent = "Gespeichert.";
+    setTimeout(() => { fb.textContent = ""; }, 2000);
+  }
+
+  function getActiveSettings() {
+    const provider = document.getElementById("providerSelect").value;
+    const model = document.getElementById("modelInput").value.trim() || DEFAULT_MODELS[provider];
+    const apiKey = document.getElementById("apiKeyInput").value.trim() || window.__sessionApiKey || "";
+    const webSearch = document.getElementById("webSearchToggle").checked;
+    return { provider, model, apiKey, webSearch };
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    loadSettings();
+    document.getElementById("providerSelect").addEventListener("change", () => {
+      const provider = document.getElementById("providerSelect").value;
+      document.getElementById("modelInput").value = DEFAULT_MODELS[provider];
+      toggleWebSearchVisibility();
+    });
+  });
+
+  // ---------- KI-Anfrage pro Behauptung ----------
+
+  async function runAiCheck(btn) {
+    const claimEl = btn.closest(".claim");
+    const claimText = claimEl.dataset.claimText;
+    const resultBox = claimEl.querySelector(".ai-result");
+    const { provider, model, apiKey, webSearch } = getActiveSettings();
+
+    if (!apiKey) {
+      resultBox.style.display = "block";
+      resultBox.innerHTML = `<p class="ai-error">Kein API-Key hinterlegt. Bitte oben unter „KI-Einschätzung einrichten" einen Key eintragen und speichern.</p>`;
+      return;
+    }
+
+    const providerLabel = { google: "Gemini", anthropic: "Claude", openai: "OpenAI" }[provider] || provider;
+    resultBox.style.display = "block";
+    resultBox.innerHTML = `<p class="ai-loading">Fragt ${providerLabel} an …</p>`;
+    btn.disabled = true;
+
+    try {
+      let parsed;
+      if (provider === "google") {
+        parsed = await callGemini(claimText, model, apiKey, webSearch);
+      } else if (provider === "anthropic") {
+        parsed = await callAnthropic(claimText, model, apiKey, webSearch);
+      } else {
+        parsed = await callOpenAI(claimText, model, apiKey);
+      }
+      renderAiResult(claimEl, resultBox, parsed);
+    } catch (err) {
+      resultBox.innerHTML = `<p class="ai-error">Fehler bei der Anfrage:\n${escapeHtml((err && err.message) || err)}</p>`;
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  function extractJson(text) {
+    const start = text.indexOf("{");
+    const end = text.lastIndexOf("}");
+    if (start === -1 || end === -1) throw new Error("Antwort enthielt kein erkennbares JSON:\n" + text);
+    return JSON.parse(text.slice(start, end + 1));
+  }
+
+  const GEMINI_JSON_SCHEMA = {
+    type: "object",
+    properties: {
+      verdict: {
+        type: "string",
+        enum: ["korrekt", "groesstenteils-korrekt", "irrefuehrend", "groesstenteils-falsch", "falsch", "unklar", "meinung"]
+      },
+      reasoning: { type: "string" },
+      sources: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: { title: { type: "string" }, url: { type: "string" } }
+        }
+      }
+    },
+    required: ["verdict", "reasoning"]
+  };
+
+  async function callGemini(claimText, model, apiKey, webSearch) {
+    // Echte Gemini-API (generateContent) statt eines frei erfundenen Endpunkts:
+    // https://ai.google.dev/api/generate-content
+    const body = {
+      contents: [{
+        role: "user",
+        parts: [{ text: `${JOURNALISTIC_SYSTEM_PROMPT}\n\nZu prüfende Behauptung: ${claimText}` }]
+      }]
+    };
+
+    if (webSearch) {
+      // Grounding per Google-Suche und erzwungene JSON-Ausgabe lassen sich derzeit
+      // nicht zuverlässig kombinieren - bei aktivierter Suche verlassen wir uns
+      // auf die Prompt-Anweisung, ausschließlich JSON zu antworten.
+      body.tools = [{ google_search: {} }];
+    } else {
+      body.generationConfig = {
+        responseMimeType: "application/json",
+        responseSchema: GEMINI_JSON_SCHEMA
+      };
+    }
+
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-goog-api-key": apiKey
+        },
+        body: JSON.stringify(body)
+      }
+    );
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error((data.error && data.error.message) || JSON.stringify(data));
+    }
+
+    const text = (data.candidates?.[0]?.content?.parts || [])
+      .filter(p => typeof p.text === "string")
+      .map(p => p.text)
+      .join("\n");
+    if (!text) throw new Error("Keine Textantwort in der Gemini-Antwort gefunden:\n" + JSON.stringify(data));
+
+    return extractJson(text);
+  }
+
+  async function callAnthropic(claimText, model, apiKey, webSearch) {
+    const body = {
+      model,
+      max_tokens: 1024,
+      system: JOURNALISTIC_SYSTEM_PROMPT,
+      messages: [{ role: "user", content: `Zu prüfende Behauptung: ${claimText}` }]
+    };
+    if (webSearch) {
+      body.tools = [{ type: "web_search_20250305", name: "web_search", max_uses: 5 }];
+    }
+
+    const headers = {
+      "content-type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true"
+    };
+    if (webSearch) {
+      headers["anthropic-beta"] = "web-search-2025-03-05";
+    }
+
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers,
+      body: JSON.stringify(body)
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error((data.error && data.error.message) || JSON.stringify(data));
+    }
+
+    const textBlocks = (data.content || [])
+      .filter(b => b.type === "text")
+      .map(b => b.text)
+      .join("\n");
+
+    return extractJson(textBlocks);
+  }
+
+  async function callOpenAI(claimText, model, apiKey) {
+    const body = {
+      model,
+      messages: [
+        { role: "system", content: JOURNALISTIC_SYSTEM_PROMPT },
+        { role: "user", content: `Zu prüfende Behauptung: ${claimText}` }
+      ],
+      // Erzwingt gültiges JSON in der Antwort, statt sich nur auf die Prompt-Anweisung
+      // zu verlassen (wird von allen aktuellen gpt-4o/gpt-4.1-Modellen unterstützt).
+      response_format: { type: "json_object" }
+    };
+
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "authorization": `Bearer ${apiKey}`
+      },
+      body: JSON.stringify(body)
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error((data.error && data.error.message) || JSON.stringify(data));
+    }
+
+    const text = data.choices?.[0]?.message?.content || "";
+    return extractJson(text);
+  }
+
+  function renderAiResult(claimEl, resultBox, parsed) {
+    const verdictText = verdictLabel(parsed.verdict) || parsed.verdict || "unklar";
+    const sources = Array.isArray(parsed.sources) ? parsed.sources : [];
+
+    const sourcesHtml = sources.length
+      ? `<div class="ai-sources">${sources.map(s => {
+          const href = safeUrl(s.url);
+          const label = "↗ " + escapeHtml(s.title || s.url || "Quelle");
+          return href
+            ? `<a href="${escapeHtml(href)}" target="_blank" rel="noopener">${label}</a>`
+            : `<span class="ai-source-invalid" title="Ungültiger Link aus der KI-Antwort">${label}</span>`;
+        }).join("")}</div>`
+      : `<p style="color:var(--muted); font-size:0.8rem; margin:0;">Keine Quellen angegeben.</p>`;
+
+    resultBox.innerHTML = `
+      <span class="ai-verdict">${escapeHtml(verdictText)}</span>
+      <p class="ai-reasoning">${escapeHtml(parsed.reasoning || "")}</p>
+      ${sourcesHtml}
+    `;
+
+    // Vorschlag automatisch in die manuelle Einordnung übernehmen (bleibt editierbar)
+    const select = claimEl.querySelector(".verdict-select");
+    const notes = claimEl.querySelector(".notes");
+    if (select && parsed.verdict) select.value = parsed.verdict;
+    if (notes && !notes.value.trim()) {
+      notes.value = `KI-Einschätzung: ${parsed.reasoning || ""}`;
+    }
+  }
+
+  // ---------- Bestehende Logik ----------
+
+  function splitIntoClaims(text) {
+    return text
+      .split(/(?<=[.!?])\s+(?=[A-ZÄÖÜ0-9"„])/)
+      .map(s => s.trim())
+      .filter(s => s.length > 8);
+  }
+
+  function buildSearchLinks(claim) {
+    const q = encodeURIComponent(claim);
+    const general = [
+      { label: "Google", url: `https://www.google.com/search?q=${q}` },
+      { label: "Bing", url: `https://www.bing.com/search?q=${q}` },
+      { label: "DuckDuckGo", url: `https://duckduckgo.com/?q=${q}` },
+      { label: "Wikipedia", url: `https://de.wikipedia.org/w/index.php?search=${q}` },
+    ];
+    const factcheckers = [
+      { label: "Google Fact Check Explorer", url: `https://toolbox.google.com/factcheck/explorer/search/${q};hl=de` },
+      { label: "Correctiv Faktencheck", url: `https://www.google.com/search?q=${q}+site:correctiv.org` },
+      { label: "ARD Faktenfinder", url: `https://www.google.com/search?q=${q}+site:tagesschau.de/faktenfinder` },
+      { label: "dpa Faktencheck", url: `https://www.google.com/search?q=${q}+site:dpa-factchecking.com` },
+      { label: "Mimikama", url: `https://www.google.com/search?q=${q}+site:mimikama.org` },
+      { label: "APA Faktencheck (AT)", url: `https://www.google.com/search?q=${q}+site:apa.at/faktencheck` },
+      { label: "Volksverpetzer", url: `https://www.google.com/search?q=${q}+site:volksverpetzer.de` },
+    ];
+    const scholarly = [
+      { label: "Google Scholar", url: `https://scholar.google.com/scholar?q=${q}` },
+      { label: "PubMed", url: `https://pubmed.ncbi.nlm.nih.gov/?term=${q}` },
+    ];
+    return { general, factcheckers, scholarly };
+  }
+
+  function renderLinkGroup(label, links, cls) {
+    const items = links.map(l =>
+      `<a class="${cls || ''}" href="${l.url}" target="_blank" rel="noopener">${l.label}</a>`
+    ).join("");
+    return `<span class="group-label">${label}</span><div class="links">${items}</div>`;
+  }
+
+  function updateProgress(claimEl) {
+    const boxes = claimEl.querySelectorAll('.checklist input[type="checkbox"]');
+    const done = [...boxes].filter(b => b.checked).length;
+    const badge = claimEl.querySelector('.progress-badge');
+    badge.textContent = `${done}/${boxes.length} Schritte`;
+    badge.style.background = done === boxes.length ? 'var(--accent)' : '';
+    badge.style.color = done === boxes.length ? '#06251c' : '';
+  }
+
+  function checkClaims() {
+    const text = document.getElementById("input").value.trim();
+    const results = document.getElementById("results");
+    results.innerHTML = "";
+
+    if (!text) {
+      results.innerHTML = `<div class="empty">Bitte zuerst einen Text eingeben.</div>`;
+      return;
+    }
+
+    const claims = splitIntoClaims(text);
+
+    if (claims.length === 0) {
+      results.innerHTML = `<div class="empty">Keine prüfbaren Sätze gefunden.</div>`;
+      return;
+    }
+
+    claims.forEach((claim, i) => {
+      const { general, factcheckers, scholarly } = buildSearchLinks(claim);
+
+      const stepsHtml = STEPS.map((s, si) => `
+        <label>
+          <input type="checkbox" data-claim="${i}" data-step="${si}" onchange="updateProgress(this.closest('.claim'))">
+          <span>
+            <span class="step-title">${s.title}</span>
+            <span class="step-desc">${s.desc}</span>
+          </span>
+        </label>
+      `).join("");
+
+      const verdictOptions = VERDICTS.map(v =>
+        `<option value="${v.value}">${v.label}</option>`
+      ).join("");
+
+      const div = document.createElement("div");
+      div.className = "claim";
+      div.dataset.claimText = claim;
+      div.innerHTML = `
+        <div class="claim-header">
+          <p>${i + 1}. ${escapeHtml(claim)}</p>
+          <span class="progress-badge">0/${STEPS.length} Schritte</span>
+        </div>
+
+        <div class="checklist">${stepsHtml}</div>
+
+        ${renderLinkGroup("Faktencheck-Portale", factcheckers, "factcheck")}
+        ${renderLinkGroup("Primär- & Gegenrecherche", general)}
+        ${renderLinkGroup("Wissenschaftliche Quellen", scholarly)}
+
+        <div class="ai-row" style="margin-top:1rem;">
+          <button class="ai-btn" onclick="runAiCheck(this)">🤖 KI-Einschätzung anfragen</button>
+          <div class="ai-result" style="display:none;"></div>
+        </div>
+
+        <div class="verdict-row">
+          <label>Deine Einordnung</label>
+          <select class="verdict-select">${verdictOptions}</select>
+          <textarea class="notes" placeholder="Notizen, Quellenangaben, Einschränkungen …"></textarea>
+        </div>
+      `;
+      results.appendChild(div);
+    });
+
+    document.getElementById("summaryActions").style.display = "flex";
+    document.getElementById("summary").innerHTML = "";
+  }
+
+  function verdictLabel(value) {
+    const match = VERDICTS.find(v => v.value === value);
+    return match ? match.label : value;
+  }
+
+  function buildSummary() {
+    const claimEls = document.querySelectorAll("#results .claim");
+    const summary = document.getElementById("summary");
+
+    if (claimEls.length === 0) {
+      summary.innerHTML = `<div class="empty">Noch keine Behauptungen geprüft.</div>`;
+      return;
+    }
+
+    const items = [...claimEls].map((el, i) => {
+      const claimText = el.dataset.claimText;
+      const verdictSelect = el.querySelector(".verdict-select");
+      const verdictValue = verdictSelect ? verdictSelect.value : "";
+      const notes = el.querySelector(".notes")?.value.trim() || "";
+      const boxes = el.querySelectorAll('.checklist input[type="checkbox"]');
+      const done = [...boxes].filter(b => b.checked).length;
+
+      return {
+        index: i + 1,
+        claim: claimText,
+        verdict: verdictValue,
+        verdictText: verdictValue ? verdictLabel(verdictValue) : "noch nicht bewertet",
+        notes,
+        done,
+        total: boxes.length
+      };
+    });
+
+    const html = items.map(it => `
+      <div class="summary-item">
+        <p class="s-claim">${it.index}. ${escapeHtml(it.claim)}</p>
+        <span class="s-verdict ${it.verdict ? '' : 'unset'}">${escapeHtml(it.verdictText)}</span>
+        <p class="s-progress">${it.done}/${it.total} Recherche-Schritte abgehakt</p>
+        ${it.notes ? `<p class="s-notes">${escapeHtml(it.notes)}</p>` : ""}
+      </div>
+    `).join("");
+
+    summary.innerHTML = `
+      <div class="card" id="summaryCard">
+        <h2>Zusammenfassung</h2>
+        ${html}
+        <div class="row" style="margin-top:1.2rem;">
+          <button onclick="copySummary()">Als Text kopieren</button>
+          <span class="copy-feedback" id="copyFeedback"></span>
+        </div>
+      </div>
+    `;
+
+    document.getElementById("summaryCard").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function copySummary() {
+    const claimEls = document.querySelectorAll("#results .claim");
+    const lines = [...claimEls].map((el, i) => {
+      const claimText = el.dataset.claimText;
+      const verdictValue = el.querySelector(".verdict-select")?.value || "";
+      const notes = el.querySelector(".notes")?.value.trim() || "";
+      const verdictText = verdictValue ? verdictLabel(verdictValue) : "noch nicht bewertet";
+      let line = `${i + 1}. ${claimText}\n   Einordnung: ${verdictText}`;
+      if (notes) line += `\n   Notizen: ${notes}`;
+      return line;
+    });
+    const text = lines.join("\n\n");
+
+    const feedback = document.getElementById("copyFeedback");
+    try {
+      navigator.clipboard.writeText(text).then(() => {
+        if (feedback) {
+          feedback.textContent = "Kopiert.";
+          setTimeout(() => { feedback.textContent = ""; }, 2000);
+        }
+      }).catch(() => {
+        if (feedback) feedback.textContent = "Kopieren fehlgeschlagen – bitte manuell markieren.";
+      });
+    } catch (e) {
+      if (feedback) feedback.textContent = "Kopieren nicht unterstützt.";
+    }
+  }
+
+  function clearAll() {
+    document.getElementById("input").value = "";
+    document.getElementById("results").innerHTML = "";
+    document.getElementById("summary").innerHTML = "";
+    document.getElementById("summaryActions").style.display = "none";
+  }
+</script>
+
+</body>
+</html>
