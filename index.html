@@ -430,9 +430,15 @@
         <input type="checkbox" id="rememberKey" style="accent-color: var(--accent);"> Key in diesem Browser merken
       </label>
       <label id="webSearchLabel" style="display:flex; align-items:center; gap:0.4rem; font-size:0.85rem;">
-        <input type="checkbox" id="webSearchToggle" checked style="accent-color: var(--accent);"> Web-Suche aktivieren
+        <input type="checkbox" id="webSearchToggle" style="accent-color: var(--accent);"> Web-Suche aktivieren
       </label>
     </div>
+    <p class="principles" style="margin-top:0.4rem;">
+      Hinweis: Die Web-Suche hat bei kostenlosen Keys ein deutlich kleineres Limit
+      als reine Textanfragen und ist daher standardmäßig <strong>aus</strong>. Ohne
+      Web-Suche nutzt die KI ihr Trainingswissen; für aktuelle Ereignisse kann das
+      veraltet sein – die verlinkten Quellen oben decken das ab.
+    </p>
     <div class="row" style="margin-top:0.8rem;">
       <button onclick="saveSettings()">Einstellungen speichern</button>
       <span class="copy-feedback" id="settingsFeedback"></span>
@@ -584,7 +590,7 @@ ohne zusätzlichen Text davor oder danach:
     document.getElementById("modelInput").value = stored.model || DEFAULT_MODELS[provider];
     document.getElementById("apiKeyInput").value = stored.apiKey || "";
     document.getElementById("rememberKey").checked = !!stored.apiKey;
-    document.getElementById("webSearchToggle").checked = stored.webSearch !== false;
+    document.getElementById("webSearchToggle").checked = stored.webSearch === true;
     toggleWebSearchVisibility();
   }
 
@@ -701,8 +707,11 @@ ohne zusätzlichen Text davor oder danach:
       return { ok: true };
     } catch (err) {
       const rateLimited = err && err.status === 429;
+      const searchHint = (rateLimited && provider === "google" && webSearch)
+        ? ` Besonders wahrscheinlich: Die <strong>Web-Suche</strong> hat auf kostenlosen Keys ein deutlich kleineres Limit als reine Textanfragen – probier es unten unter „KI-Einschätzung einrichten" ohne Web-Suche.`
+        : "";
       resultBox.innerHTML = rateLimited
-        ? `<p class="ai-error">Kostenloses Anfrage-Limit bei ${providerLabel} gerade erreicht. Warte einen Moment (bei kostenlosen Keys meist ein bis wenige Minuten) und tippe dann erneut auf „KI-Einschätzung anfragen".</p>`
+        ? `<p class="ai-error">Kostenloses Anfrage-Limit bei ${providerLabel} gerade erreicht (nicht dein gesamtes Kontingent, sondern meist ein Minuten-Limit). Warte kurz und tippe dann erneut auf „KI-Einschätzung anfragen".${searchHint}</p>`
         : `<p class="ai-error">Fehler bei der Anfrage:\n${escapeHtml((err && err.message) || err)}</p>`;
       return { ok: false, rateLimited };
     } finally {
@@ -780,17 +789,23 @@ ohne zusätzlichen Text davor oder danach:
       }]
     };
 
+    // Kein erweitertes Nachdenken nötig: Für eine kurze Einordnung + Begründung
+    // verbraucht "thinking" ein Vielfaches an unsichtbaren Tokens (bei einem Test
+    // z. B. 68 versteckte Tokens für eine 2-Zeichen-Antwort) und macht ein
+    // Anfragen-/Tokenlimit pro Minute unnötig schnell voll - ohne spürbar bessere
+    // Ergebnisse bei dieser einfachen Klassifizierungsaufgabe.
+    const generationConfig = { thinkingConfig: { thinkingBudget: 0 } };
+
     if (webSearch) {
       // Grounding per Google-Suche und erzwungene JSON-Ausgabe lassen sich derzeit
       // nicht zuverlässig kombinieren - bei aktivierter Suche verlassen wir uns
       // auf die Prompt-Anweisung, ausschließlich JSON zu antworten.
       body.tools = [{ google_search: {} }];
     } else {
-      body.generationConfig = {
-        responseMimeType: "application/json",
-        responseSchema: GEMINI_JSON_SCHEMA
-      };
+      generationConfig.responseMimeType = "application/json";
+      generationConfig.responseSchema = GEMINI_JSON_SCHEMA;
     }
+    body.generationConfig = generationConfig;
 
     const res = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
