@@ -635,9 +635,13 @@ ohne zusätzlichen Text davor oder danach:
     const hint = document.getElementById("manualHint");
     hint.style.display = active ? "block" : "none";
     if (active) {
+      // Inhalt jedes Mal komplett neu aufbauen (statt ein verschachteltes Element zu
+      // suchen) - showAiRateLimitNotice() ersetzt denselben Container zwischenzeitlich
+      // komplett, ein einzelnes Kind-Element wäre dann verschwunden.
       const provider = getActiveSettings().provider;
       const label = { google: "Google Gemini", anthropic: "Anthropic Claude", openai: "OpenAI" }[provider] || provider;
-      document.getElementById("manualHintProvider").textContent = label;
+      hint.innerHTML = `Automatische Bewertung ist aktiv (Anbieter: ${escapeHtml(label)}).
+        Jede neue Behauptung wird direkt eingeschätzt – die Vorschläge bleiben unten editierbar.`;
     }
   }
 
@@ -662,6 +666,11 @@ ohne zusätzlichen Text davor oder danach:
   // `btn` ist optional: bei der automatischen Bewertung nach dem Aufteilen der
   // Behauptungen gibt es (noch) keinen Klick, sondern nur das Behauptungs-Element.
 
+  /**
+   * Führt die eigentliche Anfrage aus. Gibt { ok: true } | { ok: false, rateLimited: bool }
+   * zurück, damit die automatische Reihe (unten) bei einem erreichten Limit sauber
+   * aufhören kann, statt bei jeder weiteren Behauptung denselben Fehler zu wiederholen.
+   */
   async function runAiCheck(claimEl, btn) {
     const claimText = claimEl.dataset.claimText;
     const resultBox = claimEl.querySelector(".ai-result");
@@ -670,7 +679,7 @@ ohne zusätzlichen Text davor oder danach:
     if (!apiKey) {
       resultBox.style.display = "block";
       resultBox.innerHTML = `<p class="ai-error">Kein API-Key hinterlegt. Bitte oben unter „KI-Einschätzung einrichten" einen Key eintragen und speichern.</p>`;
-      return;
+      return { ok: false, rateLimited: false };
     }
 
     const providerLabel = { google: "Gemini", anthropic: "Claude", openai: "OpenAI" }[provider] || provider;
@@ -689,24 +698,50 @@ ohne zusätzlichen Text davor oder danach:
       }
       renderAiResult(claimEl, resultBox, parsed);
       claimEl.dataset.aiChecked = "1";
+      return { ok: true };
     } catch (err) {
-      resultBox.innerHTML = `<p class="ai-error">Fehler bei der Anfrage:\n${escapeHtml((err && err.message) || err)}</p>`;
+      const rateLimited = err && err.status === 429;
+      resultBox.innerHTML = rateLimited
+        ? `<p class="ai-error">Kostenloses Anfrage-Limit bei ${providerLabel} gerade erreicht. Warte einen Moment (bei kostenlosen Keys meist ein bis wenige Minuten) und tippe dann erneut auf „KI-Einschätzung anfragen".</p>`
+        : `<p class="ai-error">Fehler bei der Anfrage:\n${escapeHtml((err && err.message) || err)}</p>`;
+      return { ok: false, rateLimited };
     } finally {
       if (btn) btn.disabled = false;
     }
   }
 
-  const AI_AUTO_DELAY_MS = 900; // kleine Pause zwischen automatischen Anfragen (schont kostenlose Rate-Limits)
+  // Abstand zwischen automatischen Anfragen. Kostenlose Keys erlauben oft nur wenige
+  // Anfragen pro Minute – lieber spürbar langsamer als sofort ins Limit zu laufen.
+  const AI_AUTO_DELAY_MS = 4000;
 
   /** Fragt für jede noch nicht bewertete Behauptung automatisch eine KI-Einschätzung an – nacheinander, nicht parallel. */
   async function autoCheckAllClaims() {
     if (!hasApiKey()) return;
+    updateAiCta(); // setzt einen evtl. noch stehenden Limit-Hinweis vom letzten Mal zurück
     const claimEls = [...document.querySelectorAll("#results .claim")].filter(el => el.dataset.aiChecked !== "1");
     for (const claimEl of claimEls) {
       if (!hasApiKey()) break; // Key könnte zwischenzeitlich entfernt worden sein
-      await runAiCheck(claimEl);
+      const result = await runAiCheck(claimEl);
+      if (result && result.rateLimited) {
+        showAiRateLimitNotice();
+        break; // nicht weitermachen – jede weitere Anfrage würde ebenfalls sofort scheitern
+      }
       await new Promise(r => setTimeout(r, AI_AUTO_DELAY_MS));
     }
+  }
+
+  function showAiRateLimitNotice() {
+    const hint = document.getElementById("manualHint");
+    hint.innerHTML = `Kostenloses Anfrage-Limit erreicht – die automatische Bewertung hat pausiert.
+      Warte einen Moment und tippe bei den restlichen Behauptungen einzeln auf
+      „KI-Einschätzung (erneut) anfragen", oder lade die Seite später neu.`;
+  }
+
+  /** Baut aus einer Fehlerantwort einen Error mit angehängtem HTTP-Status (für 429/Rate-Limit-Erkennung). */
+  function apiError(res, data) {
+    const err = new Error((data && data.error && data.error.message) || JSON.stringify(data));
+    err.status = res.status;
+    return err;
   }
 
   function extractJson(text) {
@@ -771,7 +806,7 @@ ohne zusätzlichen Text davor oder danach:
 
     const data = await res.json();
     if (!res.ok) {
-      throw new Error((data.error && data.error.message) || JSON.stringify(data));
+      throw apiError(res, data);
     }
 
     const text = (data.candidates?.[0]?.content?.parts || [])
@@ -812,7 +847,7 @@ ohne zusätzlichen Text davor oder danach:
 
     const data = await res.json();
     if (!res.ok) {
-      throw new Error((data.error && data.error.message) || JSON.stringify(data));
+      throw apiError(res, data);
     }
 
     const textBlocks = (data.content || [])
@@ -846,7 +881,7 @@ ohne zusätzlichen Text davor oder danach:
 
     const data = await res.json();
     if (!res.ok) {
-      throw new Error((data.error && data.error.message) || JSON.stringify(data));
+      throw apiError(res, data);
     }
 
     const text = data.choices?.[0]?.message?.content || "";
