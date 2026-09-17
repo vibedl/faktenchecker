@@ -545,6 +545,23 @@
 
   // ---------- KI-Einstellungen ----------
 
+  /**
+   * Macht kleine, sehr häufige Tippfehler im freien Modell-Feld unschädlich, bevor die ID
+   * an die API geht - z. B. den in der Oberfläche angezeigten Namen „Gemini 3.8 Flash"
+   * statt der echten ID „gemini-3.8-flash", ein Leerzeichen davor/danach, ein versehentlich
+   * mitkopiertes „models/"-Präfix. Deckt NICHT jeden möglichen Fehler ab (z. B. eine
+   * schlicht falsche/erfundene ID) - dafür gibt es die eigene Fehlermeldung unten.
+   */
+  function normalizeModelId(raw) {
+    return String(raw ?? "")
+      .trim()
+      .replace(/^models\//i, "")
+      .replace(/:generateContent$/i, "")
+      .replace(/\/+$/, "")
+      .toLowerCase()
+      .replace(/\s+/g, "-");
+  }
+
   const DEFAULT_MODELS = {
     google: "gemini-3.8-flash",
     anthropic: "claude-sonnet-5",
@@ -601,7 +618,8 @@ ohne zusätzlichen Text davor oder danach:
 
   function saveSettings() {
     const provider = document.getElementById("providerSelect").value;
-    const model = document.getElementById("modelInput").value.trim() || DEFAULT_MODELS[provider];
+    const model = normalizeModelId(document.getElementById("modelInput").value) || DEFAULT_MODELS[provider];
+    document.getElementById("modelInput").value = model; // Korrektur sichtbar machen
     const apiKey = document.getElementById("apiKeyInput").value.trim();
     const remember = document.getElementById("rememberKey").checked;
     const webSearch = document.getElementById("webSearchToggle").checked;
@@ -625,7 +643,7 @@ ohne zusätzlichen Text davor oder danach:
 
   function getActiveSettings() {
     const provider = document.getElementById("providerSelect").value;
-    const model = document.getElementById("modelInput").value.trim() || DEFAULT_MODELS[provider];
+    const model = normalizeModelId(document.getElementById("modelInput").value) || DEFAULT_MODELS[provider];
     const apiKey = document.getElementById("apiKeyInput").value.trim() || window.__sessionApiKey || "";
     const webSearch = document.getElementById("webSearchToggle").checked;
     return { provider, model, apiKey, webSearch };
@@ -707,12 +725,21 @@ ohne zusätzlichen Text davor oder danach:
       return { ok: true };
     } catch (err) {
       const rateLimited = err && err.status === 429;
+      const badModelName = err && err.status === 400 && /model name format|model.*not found|is not found for API version/i.test(err.message || "");
       const searchHint = (rateLimited && provider === "google" && webSearch)
         ? ` Besonders wahrscheinlich: Die <strong>Web-Suche</strong> hat auf kostenlosen Keys ein deutlich kleineres Limit als reine Textanfragen – probier es unten unter „KI-Einschätzung einrichten" ohne Web-Suche.`
         : "";
-      resultBox.innerHTML = rateLimited
-        ? `<p class="ai-error">Kostenloses Anfrage-Limit bei ${providerLabel} gerade erreicht (nicht dein gesamtes Kontingent, sondern meist ein Minuten-Limit). Warte kurz und tippe dann erneut auf „KI-Einschätzung anfragen".${searchHint}</p>`
-        : `<p class="ai-error">Fehler bei der Anfrage:\n${escapeHtml((err && err.message) || err)}</p>`;
+      if (badModelName) {
+        // Autokorrektur greift nur bei „Speichern"; hier ohne erneuten Klick direkt reparieren
+        // und einmal automatisch neu versuchen, statt den Nutzer mit dem Fehler allein zu lassen.
+        const fixed = normalizeModelId(document.getElementById("modelInput").value) || DEFAULT_MODELS[provider];
+        document.getElementById("modelInput").value = fixed;
+        resultBox.innerHTML = `<p class="ai-error">Der eingetragene Modellname bei ${providerLabel} wurde nicht akzeptiert (Original-Meldung: ${escapeHtml(err.message || "")}). Auf „${escapeHtml(fixed)}" korrigiert – bitte noch einmal auf „KI-Einschätzung anfragen" tippen. Bleibt der Fehler, oben unter „KI-Einschätzung einrichten" das Modellfeld leeren, damit die Standard-ID greift.</p>`;
+      } else {
+        resultBox.innerHTML = rateLimited
+          ? `<p class="ai-error">Kostenloses Anfrage-Limit bei ${providerLabel} gerade erreicht (nicht dein gesamtes Kontingent, sondern meist ein Minuten-Limit). Warte kurz und tippe dann erneut auf „KI-Einschätzung anfragen".${searchHint}</p>`
+          : `<p class="ai-error">Fehler bei der Anfrage:\n${escapeHtml((err && err.message) || err)}</p>`;
+      }
       return { ok: false, rateLimited };
     } finally {
       if (btn) btn.disabled = false;
